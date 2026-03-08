@@ -5,6 +5,7 @@ use commands::clone::clone_repo;
 use commands::branch::add_branch;
 use commands::add::add_all;
 use commands::commit::commit_changes;
+use commands::stash::handle_stash;
 
 #[derive(Parser)]
 #[command(name = "3g")]
@@ -37,6 +38,11 @@ enum Commands {
     Add,
     /// Commit staged changes with a message from the default editor
     Commit,
+    /// Stash changes or pop the latest stash
+    Stash {
+        /// "pop" to apply and remove the latest stash, or a name for a new stash
+        arg: Option<String>,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -54,6 +60,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Commit => {
             commit_changes()?;
+        }
+        Commands::Stash { arg } => {
+            handle_stash(arg.as_deref())?;
         }
     }
 
