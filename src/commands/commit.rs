@@ -22,11 +22,15 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
     // 4. Open default editor for the commit message
     let editor = env::var("EDITOR").unwrap_or_else(|_| "vi".to_string());
     
-    // Create a temporary file for the commit message
-    let temp_file = env::temp_dir().join("3G_COMMIT_EDITMSG");
-    if !temp_file.exists() {
-        fs::write(&temp_file, "")?;
-    }
+    // Create a unique temporary file for the commit message using a timestamp
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    
+    let temp_file = env::temp_dir().join(format!("3G_COMMIT_EDITMSG_{}", timestamp));
+    
+    fs::write(&temp_file, "")?;
 
     // Use a shell to execute the editor command to handle complex strings
     let status = Command::new("sh")
