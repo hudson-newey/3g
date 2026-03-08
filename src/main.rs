@@ -27,6 +27,9 @@ enum Commands {
     Branch {
         /// The name of the branch to add
         name: String,
+
+        /// The base branch to create the new branch from
+        base: Option<String>,
     },
 }
 
@@ -37,8 +40,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Clone { url, name } => {
             clone_repo(&url, name)?;
         }
-        Commands::Branch { name } => {
-            add_branch(&name)?;
+        Commands::Branch { name, base } => {
+            add_branch(&name, base.as_deref())?;
         }
     }
 
