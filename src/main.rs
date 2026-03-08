@@ -48,7 +48,11 @@ enum Commands {
     /// Reset the current branch to HEAD, discarding all changes (hard reset)
     Reset,
     /// Push the current branch to the origin remote
-    Push,
+    Push {
+        /// Force push (behavior: force-with-lease)
+        #[arg(short, long)]
+        force: bool,
+    },
     /// Pull changes from the origin remote and rebase
     Pull {
         /// Optional branch to pull from
@@ -91,8 +95,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Reset => {
             commands::reset::reset_hard()?;
         }
-        Commands::Push => {
-            commands::push::push_current_branch()?;
+        Commands::Push { force } => {
+            commands::push::push_current_branch(force)?;
         }
         Commands::Pull { branch } => {
             commands::pull::pull_rebase(branch.as_deref())?;
