@@ -3,6 +3,8 @@ mod commands;
 use clap::{Parser, Subcommand};
 use commands::clone::clone_repo;
 use commands::branch::add_branch;
+use commands::add::add_all;
+use commands::commit::commit_changes;
 
 #[derive(Parser)]
 #[command(name = "3g")]
@@ -31,6 +33,10 @@ enum Commands {
         /// The base branch to create the new branch from
         base: Option<String>,
     },
+    /// Add all changes in the current branch to the staging area
+    Add,
+    /// Commit staged changes with a message from the default editor
+    Commit,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -42,6 +48,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Branch { name, base } => {
             add_branch(&name, base.as_deref())?;
+        }
+        Commands::Add => {
+            add_all()?;
+        }
+        Commands::Commit => {
+            commit_changes()?;
         }
     }
 
