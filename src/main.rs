@@ -49,6 +49,11 @@ enum Commands {
     Reset,
     /// Push the current branch to the origin remote
     Push,
+    /// Pull changes from the origin remote and rebase
+    Pull {
+        /// Optional branch to pull from
+        branch: Option<String>,
+    },
     /// Show the difference between HEAD and origin (default) or another branch
     Diff {
         /// Optional branch to compare against
@@ -88,6 +93,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Push => {
             commands::push::push_current_branch()?;
+        }
+        Commands::Pull { branch } => {
+            commands::pull::pull_rebase(branch.as_deref())?;
         }
         Commands::Diff { branch } => {
             commands::diff::show_diff(branch.as_deref())?;
