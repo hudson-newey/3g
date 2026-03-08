@@ -19,8 +19,15 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
     let tree_id = index.write_tree()?;
     let tree = repo.find_tree(tree_id)?;
 
-    // 4. Open default editor for the commit message
-    let editor = env::var("EDITOR").unwrap_or_else(|_| "vi".to_string());
+    // 4. Determine the editor to use
+    // Priority: Git config (core.editor) -> EDITOR env var -> vi
+    let config = repo.config()?;
+    let editor = config.get_string("core.editor")
+        .ok()
+        .or_else(|| env::var("EDITOR").ok())
+        .unwrap_or_else(|| "vi".to_string());
+    
+    println!("Using editor: {}", editor);
     
     // Create a unique temporary file for the commit message using a timestamp
     let timestamp = std::time::SystemTime::now()
