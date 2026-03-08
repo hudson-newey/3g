@@ -69,15 +69,21 @@ pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::er
 
 fn notify_daemon(repo_path: &PathBuf) {
     let socket_path = get_socket_path();
-    if !socket_path.exists() {
-        println!("Warning: 3g-daemon is not running. History will remain shallow until fetched manually.");
+    let abs_path = fs::canonicalize(repo_path).unwrap_or(repo_path.clone());
+    
+    if !socket_path.exists() || UnixStream::connect(&socket_path).is_err() {
+        println!("Warning: 3g-daemon is not running. Adding to fetch buffer for later processing.");
+        let buffer_path = crate::ipc::get_buffer_path();
+        if let Ok(mut file) = fs::OpenOptions::new().append(true).create(true).open(buffer_path) {
+            let _ = writeln!(file, "{}", abs_path.display());
+        }
         return;
     }
 
     match UnixStream::connect(&socket_path) {
         Ok(mut stream) => {
             let request = FetchRequest {
-                repo_path: fs::canonicalize(repo_path).unwrap_or(repo_path.clone()),
+                repo_path: abs_path,
             };
             let json = serde_json::to_string(&request).unwrap();
             if let Err(e) = stream.write_all(json.as_bytes()) {

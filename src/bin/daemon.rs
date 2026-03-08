@@ -1,9 +1,9 @@
-use std::io::{Read, Write};
+use std::io::{Read, BufRead, BufReader};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::process::Command;
-use three_g::ipc::{get_socket_path, FetchRequest};
+use three_g::ipc::{get_socket_path, get_buffer_path, FetchRequest};
 
 fn main() -> std::io::Result<()> {
     let socket_path = get_socket_path();
@@ -17,6 +17,13 @@ fn main() -> std::io::Result<()> {
     if let Some(parent) = socket_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
+
+    // Process buffered requests from when daemon was offline
+    thread::spawn(|| {
+        if let Err(e) = process_buffer_file() {
+            eprintln!("Error processing buffer file: {}", e);
+        }
+    });
 
     let listener = UnixListener::bind(&socket_path)?;
     println!("3g-daemon listening on {}", socket_path.display());
@@ -57,6 +64,42 @@ fn handle_client(mut stream: UnixStream) {
         Ok(_) => println!("Successfully unshallowed {}", request.repo_path.display()),
         Err(e) => eprintln!("Failed to unshallow {}: {}", request.repo_path.display(), e),
     }
+}
+
+fn process_buffer_file() -> std::io::Result<()> {
+    let buffer_path = get_buffer_path();
+    if !buffer_path.exists() {
+        return Ok(());
+    }
+
+    println!("Processing fetch buffer file: {}", buffer_path.display());
+
+    let file = std::fs::File::open(&buffer_path)?;
+    let reader = BufReader::new(file);
+    let mut pending_paths: Vec<String> = reader.lines().filter_map(|l| l.ok()).collect();
+
+    while !pending_paths.is_empty() {
+        let path_str = pending_paths.remove(0);
+        let path = PathBuf::from(&path_str);
+        
+        println!("Buffer processing: Fetching {}", path.display());
+        match fetch_unshallow(&path) {
+            Ok(_) => {
+                println!("Buffer processing: Success for {}", path.display());
+                // Successfully fetched, update the file with remaining paths
+                std::fs::write(&buffer_path, pending_paths.join("\n") + if pending_paths.is_empty() { "" } else { "\n" })?;
+            }
+            Err(e) => {
+                eprintln!("Buffer processing: Failed for {}: {}. It will remain in buffer.", path.display(), e);
+                // Put it back at the beginning of the list to preserve it in the file
+                pending_paths.insert(0, path_str);
+                std::fs::write(&buffer_path, pending_paths.join("\n") + "\n")?;
+                break; // Stop and retry next time the daemon starts
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn fetch_unshallow(repo_path: &Path) -> std::io::Result<()> {

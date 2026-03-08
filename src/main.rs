@@ -1,9 +1,8 @@
 use clap::{Parser, Subcommand};
 use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show};
-use three_g::ipc::{get_socket_path, FetchRequest};
+use three_g::ipc::get_socket_path;
 use std::os::unix::net::UnixStream;
-use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 #[derive(Parser)]
 #[command(name = "3g")]

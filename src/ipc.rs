@@ -18,3 +18,13 @@ pub fn get_socket_path() -> PathBuf {
         PathBuf::from("/tmp/3g.sock")
     }
 }
+
+pub fn get_buffer_path() -> PathBuf {
+    if let Some(proj_dirs) = ProjectDirs::from("com", "3g", "3g-daemon") {
+        let dir = proj_dirs.data_dir();
+        let _ = std::fs::create_dir_all(dir);
+        dir.join("daemon-fetch-buffer.txt")
+    } else {
+        PathBuf::from("/tmp/3g-daemon-fetch-buffer.txt")
+    }
+}
