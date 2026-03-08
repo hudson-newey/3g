@@ -2,6 +2,8 @@ use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks};
 use std::path::PathBuf;
 use std::fs;
 use std::io::{self, Write};
+use std::os::unix::net::UnixStream;
+use crate::ipc::{get_socket_path, FetchRequest};
 
 pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Determine repository name
@@ -16,7 +18,7 @@ pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::er
         return Err(format!("Destination path '{}' already exists", repo_name).into());
     }
 
-    println!("Cloning into '{}'...", repo_name);
+    println!("Cloning into '{}' (depth 1)...", repo_name);
     
     // 2. Create directory structure
     fs::create_dir_all(&target_dir)?;
@@ -44,6 +46,7 @@ pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::er
 
     let mut fo = FetchOptions::new();
     fo.remote_callbacks(cb);
+    fo.depth(1); // Shallow clone
 
     let mut builder = RepoBuilder::new();
     builder.bare(true);
@@ -52,13 +55,41 @@ pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::er
     // Clone into the .git folder
     builder.clone(url, &git_dir)?;
     
-    println!("\nRepository cloned successfully.");
+    println!("\nRepository cloned successfully (shallow).");
     println!("- Root: {}", target_dir.display());
     println!("- Git Data: {}", git_dir.display());
     println!("- Metadata: {}", three_g_dir.display());
     println!("- No branches checked out (as requested).");
 
+    // 5. Notify daemon to fetch full history
+    notify_daemon(&target_dir);
+
     Ok(())
+}
+
+fn notify_daemon(repo_path: &PathBuf) {
+    let socket_path = get_socket_path();
+    if !socket_path.exists() {
+        println!("Warning: 3g-daemon is not running. History will remain shallow until fetched manually.");
+        return;
+    }
+
+    match UnixStream::connect(&socket_path) {
+        Ok(mut stream) => {
+            let request = FetchRequest {
+                repo_path: fs::canonicalize(repo_path).unwrap_or(repo_path.clone()),
+            };
+            let json = serde_json::to_string(&request).unwrap();
+            if let Err(e) = stream.write_all(json.as_bytes()) {
+                 eprintln!("Failed to send fetch request to daemon: {}", e);
+            } else {
+                 println!("Notification sent to 3g-daemon to fetch full history.");
+            }
+        },
+        Err(e) => {
+            eprintln!("Failed to connect to 3g-daemon: {}", e);
+        }
+    }
 }
 
 fn extract_repo_name(url: &str) -> String {

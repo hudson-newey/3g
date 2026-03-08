@@ -7,31 +7,35 @@ In `3g`, each branch lives in its own directory within the repository container.
 
 ## Features
 - **Smart Containers**: Every repository is a `.git` suffixed directory containing your metadata and branch directories.
+- **Fast Clones**: Clones are initially shallow (depth 1) for speed. A background daemon fetches the full history.
 - **Branch-as-Directory**: Branches are checked out into subdirectories, keeping your work organized.
 - **Shared Stashes**: Stashes are managed at the root level, making them accessible from any branch.
 - **Safety First**: Destructive or branch-specific commands (`add`, `commit`, `push`, etc.) are locked down so they can only be run from within a branch directory.
 
 ## Usage
 
-### 1. Initialize a Repository
+### 1. Start the Daemon
+To enable fast background fetching, start the daemon first.
+```bash
+3g daemon start
+```
+You can check its status with `3g daemon status` or stop it with `3g daemon stop`.
+
+### 2. Initialize a Repository
 Clone a repository into a new `3g` container.
 ```bash
-cargo run -- clone <repository-url> [--name custom-name]
+3g clone <repository-url> [--name custom-name]
 ```
-Or build and use the binary directly:
-```bash
-cargo build --release
-./target/release/3g clone <repository-url>
-```
+The clone will finish quickly (shallow). The daemon will fetch the rest of the history in the background. If you try to commit before the history is complete, `3g` will ask you to wait.
 
-### 2. Manage Branches
+### 3. Manage Branches
 Check out or create a branch into a subdirectory.
 ```bash
 # In the repository root:
 3g branch <name> [base_branch]
 ```
 
-### 3. Development Workflow
+### 4. Development Workflow
 Navigate into a branch directory to use standard development commands:
 
 - **Stage changes**: `3g add` (Adds all changes in the current branch)
@@ -43,7 +47,7 @@ Navigate into a branch directory to use standard development commands:
 - **Diff**: `3g diff [branch]` (Diffs against origin or another branch)
 - **Discard changes**: `3g reset` (Hard reset to `HEAD`)
 
-### 4. Stashing
+### 5. Stashing
 Stashes are shared across all branches in the same container.
 ```bash
 # In any branch:

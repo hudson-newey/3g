@@ -14,6 +14,13 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
     // 2. Open the repository
     let repo = Repository::discover(&current_dir)?;
     
+    // Check if shallow
+    if repo.is_shallow() {
+        return Err("Repository history is incomplete (shallow clone). \
+        The 3g-daemon is likely still fetching the full history. \
+        Please wait for the background fetch to complete before committing.".into());
+    }
+    
     // 3. Get the index (the staging area)
     let mut index = repo.index()?;
     let tree_id = index.write_tree()?;
