@@ -47,6 +47,8 @@ enum Commands {
     Log,
     /// Reset the current branch to HEAD, discarding all changes (hard reset)
     Reset,
+    /// Push the current branch to the origin remote
+    Push,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -73,6 +75,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Reset => {
             commands::reset::reset_hard()?;
+        }
+        Commands::Push => {
+            commands::push::push_current_branch()?;
         }
     }
 
