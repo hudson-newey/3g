@@ -13,9 +13,10 @@ pub fn show_commit(hash: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 2. Open the repository
     let repo = Repository::discover(&current_dir)?;
     
-    // 3. Find the commit
-    let oid = git2::Oid::from_str(hash)?;
-    let commit = repo.find_commit(oid)?;
+    // 3. Find the commit using revparse_single (supports OIDs, HEAD, HEAD~n, etc.)
+    let obj = repo.revparse_single(hash)?;
+    let commit = obj.peel_to_commit()?;
+    let oid = commit.id();
     
     // 4. Print commit details
     let author = commit.author();
