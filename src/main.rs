@@ -54,6 +54,11 @@ enum Commands {
         /// Optional branch to compare against
         branch: Option<String>,
     },
+    /// Show a commit and its changes
+    Show {
+        /// The commit hash to show
+        hash: String,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -86,6 +91,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Diff { branch } => {
             commands::diff::show_diff(branch.as_deref())?;
+        }
+        Commands::Show { hash } => {
+            commands::show::show_commit(&hash)?;
         }
     }
 
