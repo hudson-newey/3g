@@ -49,6 +49,11 @@ enum Commands {
     Reset,
     /// Push the current branch to the origin remote
     Push,
+    /// Show the difference between HEAD and origin (default) or another branch
+    Diff {
+        /// Optional branch to compare against
+        branch: Option<String>,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -78,6 +83,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Push => {
             commands::push::push_current_branch()?;
+        }
+        Commands::Diff { branch } => {
+            commands::diff::show_diff(branch.as_deref())?;
         }
     }
 

@@ -6,3 +6,4 @@ pub mod stash;
 pub mod log;
 pub mod reset;
 pub mod push;
+pub mod diff;
