@@ -43,6 +43,10 @@ enum Commands {
         /// "pop" to apply and remove the latest stash, or a name for a new stash
         arg: Option<String>,
     },
+    /// Show the commit history for the current branch
+    Log,
+    /// Reset the current branch to HEAD, discarding all changes (hard reset)
+    Reset,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -63,6 +67,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Stash { arg } => {
             handle_stash(arg.as_deref())?;
+        }
+        Commands::Log => {
+            commands::log::show_log()?;
+        }
+        Commands::Reset => {
+            commands::reset::reset_hard()?;
         }
     }
 
