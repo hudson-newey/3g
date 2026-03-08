@@ -35,8 +35,6 @@ pub fn pull_rebase(target_branch: Option<&str>) -> Result<(), Box<dyn std::error
 
     // 5. Find the remote branch commit
     let remote_branch_ref = format!("refs/remotes/origin/{}", target);
-    let remote_commit_obj = repo.find_reference(&remote_branch_ref)?
-        .peel_to_commit()?;
     
     let upstream = repo.reference_to_annotated_commit(&repo.find_reference(&remote_branch_ref)?)?;
 

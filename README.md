@@ -16,7 +16,12 @@ In `3g`, each branch lives in its own directory within the repository container.
 ### 1. Initialize a Repository
 Clone a repository into a new `3g` container.
 ```bash
-3g clone <repository-url> [--name custom-name]
+cargo run -- clone <repository-url> [--name custom-name]
+```
+Or build and use the binary directly:
+```bash
+cargo build --release
+./target/release/3g clone <repository-url>
 ```
 
 ### 2. Manage Branches
