@@ -14,6 +14,7 @@
 - **Merge Command:** `3g merge <branch>` supports both fast-forward and recursive merging with conflict detection.
 - **Blame Command:** `3g blame <file>` shows the last commit hash and author name for each line in a file.
 - **Tag Command:** `3g tag [name]` lists all tags or creates a new lightweight tag at HEAD.
+- **Daemon Management:** `3g daemon <start|stop|restart|status>` provides full control over the background fetch process. `stop` and `restart` use a graceful shutdown mechanism via IPC.
 
 
 

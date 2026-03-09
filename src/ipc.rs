@@ -3,8 +3,9 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct FetchRequest {
-    pub repo_path: PathBuf,
+pub enum DaemonRequest {
+    Fetch { repo_path: PathBuf },
+    Shutdown,
 }
 
 pub fn get_socket_path() -> PathBuf {

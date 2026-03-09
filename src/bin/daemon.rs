@@ -2,8 +2,9 @@ use std::io::{Read, BufRead, BufReader};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::thread;
-use std::process::Command;
-use three_g::ipc::{get_socket_path, get_buffer_path, FetchRequest};
+use std::process::{Command, self};
+use std::sync::mpsc;
+use three_g::ipc::{get_socket_path, get_buffer_path, DaemonRequest};
 
 fn main() -> std::io::Result<()> {
     let socket_path = get_socket_path();
@@ -28,41 +29,71 @@ fn main() -> std::io::Result<()> {
     let listener = UnixListener::bind(&socket_path)?;
     println!("3g-daemon listening on {}", socket_path.display());
 
+    let (tx, rx) = mpsc::channel();
+
     // Daemon loop
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                thread::spawn(|| handle_client(stream));
-            }
-            Err(err) => {
-                eprintln!("Error accepting connection: {}", err);
+    let listener_thread = thread::spawn(move || {
+        for stream in listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    let tx_clone = tx.clone();
+                    thread::spawn(move || {
+                        if handle_client(stream) {
+                            let _ = tx_clone.send(());
+                        }
+                    });
+                }
+                Err(err) => {
+                    eprintln!("Error accepting connection: {}", err);
+                }
             }
         }
+    });
+
+    // Wait for shutdown signal
+    let _ = rx.recv();
+    println!("Received shutdown signal. Exiting...");
+
+    // Cleanup socket before exiting
+    if socket_path.exists() {
+        let _ = std::fs::remove_file(&socket_path);
     }
+    
     Ok(())
 }
 
-fn handle_client(mut stream: UnixStream) {
+fn handle_client(mut stream: UnixStream) -> bool {
     let mut buffer = String::new();
     if let Err(e) = stream.read_to_string(&mut buffer) {
         eprintln!("Failed to read from client: {}", e);
-        return;
+        return false;
     }
 
-    let request: FetchRequest = match serde_json::from_str(&buffer) {
+    if buffer.trim().is_empty() {
+        // This is likely a status ping or empty connection, just ignore it
+        return false;
+    }
+
+    let request: DaemonRequest = match serde_json::from_str(&buffer) {
         Ok(req) => req,
         Err(e) => {
-            eprintln!("Invalid request: {}", e);
-            return;
+            eprintln!("Invalid request: {}. Buffer: '{}'", e, buffer);
+            return false;
         }
     };
 
-    println!("Received fetch request for: {}", request.repo_path.display());
-
-    // Perform the unshallow fetch
-    match fetch_unshallow(&request.repo_path) {
-        Ok(_) => println!("Successfully unshallowed {}", request.repo_path.display()),
-        Err(e) => eprintln!("Failed to unshallow {}: {}", request.repo_path.display(), e),
+    match request {
+        DaemonRequest::Fetch { repo_path } => {
+            println!("Received fetch request for: {}", repo_path.display());
+            match fetch_unshallow(&repo_path) {
+                Ok(_) => println!("Successfully unshallowed {}", repo_path.display()),
+                Err(e) => eprintln!("Failed to unshallow {}: {}", repo_path.display(), e),
+            }
+            false
+        }
+        DaemonRequest::Shutdown => {
+            true
+        }
     }
 }
 

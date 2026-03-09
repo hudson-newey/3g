@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::fs;
 use std::io::{self, Write};
 use std::os::unix::net::UnixStream;
-use crate::ipc::{get_socket_path, FetchRequest};
+use crate::ipc::{get_socket_path, DaemonRequest};
 
 pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Determine repository name
@@ -82,7 +82,7 @@ fn notify_daemon(repo_path: &PathBuf) {
 
     match UnixStream::connect(&socket_path) {
         Ok(mut stream) => {
-            let request = FetchRequest {
+            let request = DaemonRequest::Fetch {
                 repo_path: abs_path,
             };
             let json = serde_json::to_string(&request).unwrap();

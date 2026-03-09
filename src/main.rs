@@ -163,43 +163,16 @@ fn handle_daemon_command(action: &str) -> Result<(), Box<dyn std::error::Error>>
 
     match action {
         "start" => {
-            if socket_path.exists() {
-                // Check if it's actually running by trying to connect
-                if UnixStream::connect(&socket_path).is_ok() {
-                    println!("Daemon is already running.");
-                    return Ok(());
-                } else {
-                    println!("Socket exists but connection failed. Cleaning up stale socket...");
-                    std::fs::remove_file(&socket_path)?;
-                }
-            }
-
-            println!("Starting 3g-daemon...");
-            // Spawn the daemon process
-            // We assume the binary '3g-daemon' is in the same directory as '3g' or in PATH
-            // For development (cargo run), it's in target/debug/ or target/release/
-            
-            let exe_path = std::env::current_exe()?;
-            let daemon_path = exe_path.parent().unwrap().join("3g-daemon");
-            
-            Command::new(daemon_path)
-                .spawn()?;
-                
-            println!("Daemon started in background.");
+            start_daemon(&socket_path)?;
         }
         "stop" => {
-            if !socket_path.exists() {
-                println!("Daemon is not running.");
-                return Ok(());
-            }
-            // For now, we just kill the process manually or remove socket? 
-            // Ideally send a "shutdown" message.
-            // Since we didn't implement shutdown, we'll just say "Stop not fully implemented, please kill 3g-daemon process".
-            // Or simpler: just remove the socket file to signal "stop" to future clients, 
-            // but the process keeps running. 
-            // Let's implement a 'shutdown' check in the daemon later.
-            // For now, let user know.
-            println!("To stop the daemon, please run: pkill 3g-daemon");
+            stop_daemon(&socket_path)?;
+        }
+        "restart" => {
+            stop_daemon(&socket_path)?;
+            // Give it a moment to cleanup
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            start_daemon(&socket_path)?;
         }
         "status" => {
             if socket_path.exists() {
@@ -213,7 +186,51 @@ fn handle_daemon_command(action: &str) -> Result<(), Box<dyn std::error::Error>>
             }
         }
         _ => {
-            println!("Unknown action: {}. Use start, stop, or status.", action);
+            println!("Unknown action: {}. Use start, stop, restart, or status.", action);
+        }
+    }
+    Ok(())
+}
+
+fn start_daemon(socket_path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+    if socket_path.exists() {
+        if UnixStream::connect(socket_path).is_ok() {
+            println!("Daemon is already running.");
+            return Ok(());
+        } else {
+            println!("Socket exists but connection failed. Cleaning up stale socket...");
+            std::fs::remove_file(socket_path)?;
+        }
+    }
+
+    println!("Starting 3g-daemon...");
+    let exe_path = std::env::current_exe()?;
+    let daemon_path = exe_path.parent().unwrap().join("3g-daemon");
+    
+    Command::new(daemon_path)
+        .spawn()?;
+        
+    println!("Daemon started in background.");
+    Ok(())
+}
+
+fn stop_daemon(socket_path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+    if !socket_path.exists() {
+        println!("Daemon is not running (socket not found).");
+        return Ok(());
+    }
+
+    match UnixStream::connect(socket_path) {
+        Ok(mut stream) => {
+            use std::io::Write;
+            let request = three_g::ipc::DaemonRequest::Shutdown;
+            let json = serde_json::to_string(&request).unwrap();
+            stream.write_all(json.as_bytes())?;
+            println!("Shutdown signal sent to 3g-daemon.");
+        }
+        Err(_) => {
+            println!("Failed to connect to daemon. It might be hanging. Removing socket...");
+            std::fs::remove_file(socket_path)?;
         }
     }
     Ok(())
