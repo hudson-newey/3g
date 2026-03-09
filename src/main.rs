@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show, status, merge};
+use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show, status, merge, blame};
 use three_g::ipc::get_socket_path;
 use std::os::unix::net::UnixStream;
 use std::process::Command;
@@ -74,6 +74,11 @@ enum Commands {
         /// The commit hash to show
         hash: String,
     },
+    /// Show what revision and author last modified each line of a file
+    Blame {
+        /// The file path to blame
+        file: String,
+    },
     /// Show the current working tree status
     Status,
     /// Merge a branch into the current branch
@@ -127,6 +132,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Show { hash } => {
             show::show_commit(&hash)?;
+        }
+        Commands::Blame { file } => {
+            blame::show_blame(&file)?;
         }
         Commands::Status => {
             status::show_status()?;

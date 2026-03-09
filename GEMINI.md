@@ -12,6 +12,8 @@
 - **Amend Command:** `3g amend` and `3g commit --amend` allow for quick modifications to the last commit, with the editor pre-filled with the existing commit message.
 - **Status Command:** `3g status` provides a clear, colorized overview of the current branch, staged changes, unstaged modifications, and untracked files.
 - **Merge Command:** `3g merge <branch>` supports both fast-forward and recursive merging with conflict detection.
+- **Blame Command:** `3g blame <file>` shows the last commit hash and author name for each line in a file.
+
 
 
 
@@ -59,5 +61,4 @@
 To achieve better parity with standard Git workflows, the following features are planned:
 - **`3g remote`**: Management of remote repository configurations.
 - **`3g tag`**: Support for lightweight version tagging.
-- **`3g blame`**: Line-level authorship attribution.
 - **Daemon Status**: Visual feedback on background fetch progress in the CLI.
