@@ -3,7 +3,7 @@ use std::fs;
 use std::process::Command;
 use git2::Repository;
 
-pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
+pub fn commit_changes(amend: bool) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
 
     // 1. Check if we are in the repository root
@@ -26,7 +26,26 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
     let tree_id = index.write_tree()?;
     let tree = repo.find_tree(tree_id)?;
 
-    // 4. Determine the editor to use
+    // 4. Get current commit if amending
+    let mut existing_message = String::new();
+    let mut parents = Vec::new();
+
+    if let Ok(head) = repo.head() {
+        let head_commit = head.peel_to_commit()?;
+        if amend {
+            existing_message = head_commit.message().unwrap_or("").to_string();
+            // For amend, parents are the parents of the head commit
+            for parent in head_commit.parents() {
+                parents.push(parent);
+            }
+        } else {
+            parents.push(head_commit);
+        }
+    } else if amend {
+        return Err("Nothing to amend. This repository has no commits yet.".into());
+    }
+
+    // 5. Determine the editor to use
     // Priority: Git config (core.editor) -> EDITOR env var -> vi
     let config = repo.config()?;
     let editor = config.get_string("core.editor")
@@ -44,7 +63,7 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
     
     let temp_file = env::temp_dir().join(format!("3G_COMMIT_EDITMSG_{}", timestamp));
     
-    fs::write(&temp_file, "")?;
+    fs::write(&temp_file, &existing_message)?;
 
     // Use a shell to execute the editor command to handle complex strings
     let status = Command::new("sh")
@@ -56,7 +75,7 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("Editor '{}' failed to open or exited with error.", editor).into());
     }
 
-    // 5. Read the commit message
+    // 6. Read the commit message
     let message = fs::read_to_string(&temp_file)?;
     fs::remove_file(&temp_file)?;
 
@@ -64,20 +83,14 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Aborting commit due to empty commit message.".into());
     }
 
-    // 6. Create the commit
+    // 7. Create the commit
     let signature = repo.signature()?;
     
-    // Get parents (if any)
-    let mut parents = Vec::new();
-    if let Ok(head) = repo.head() {
-        parents.push(head.peel_to_commit()?);
-    }
-    
-    // Convert Vec<&Commit> to Vec of references for the commit function
+    // Convert Vec<Commit> to Vec of references for the commit function
     let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
 
-    repo.commit(
-        Some("HEAD"),
+    let commit_id = repo.commit(
+        if amend { None } else { Some("HEAD") },
         &signature,
         &signature,
         &message,
@@ -85,7 +98,13 @@ pub fn commit_changes() -> Result<(), Box<dyn std::error::Error>> {
         &parent_refs,
     )?;
 
-    println!("Changes committed successfully.");
+    if amend {
+        let mut head = repo.head()?;
+        head.set_target(commit_id, "commit: amend")?;
+        println!("Commit amended successfully.");
+    } else {
+        println!("Changes committed successfully.");
+    }
 
     Ok(())
 }

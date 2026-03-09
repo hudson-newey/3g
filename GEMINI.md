@@ -7,6 +7,7 @@
 - **Background Fetching:** Uses a background daemon (`3g-daemon`) to perform long-running operations like `git fetch --unshallow` in the background. This allows users to start working on a shallow clone immediately while the full history downloads silently.
 - **Multiple Branch Checkout:** Simplified workflow for managing multiple branches (similar to `git worktree` but with improved DX).
 - **Opinionated Defaults:** Shorter, more sensible defaults for common commands (e.g., `3g add` stages all changes, `3g push` defaults to the current upstream).
+- **Amend Command:** `3g amend` and `3g commit --amend` allow for quick modifications to the last commit, with the editor pre-filled with the existing commit message.
 
 ## Architecture & Technology Stack
 - **Language:** Rust (2024 edition).

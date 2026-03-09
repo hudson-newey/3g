@@ -34,7 +34,13 @@ enum Commands {
     /// Add all changes in the current branch to the staging area
     Add,
     /// Commit staged changes with a message from the default editor
-    Commit,
+    Commit {
+        /// Amend the last commit
+        #[arg(short, long)]
+        amend: bool,
+    },
+    /// Amend the last commit (shortcut for 'commit --amend')
+    Amend,
     /// Stash changes or pop the latest stash
     Stash {
         /// "pop" to apply and remove the latest stash, or a name for a new stash
@@ -85,8 +91,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Add => {
             add::add_all()?;
         }
-        Commands::Commit => {
-            commit::commit_changes()?;
+        Commands::Commit { amend } => {
+            commit::commit_changes(amend)?;
+        }
+        Commands::Amend => {
+            commit::commit_changes(true)?;
         }
         Commands::Stash { arg } => {
             stash::handle_stash(arg.as_deref())?;
