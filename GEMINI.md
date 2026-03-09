@@ -13,6 +13,8 @@
 - **Status Command:** `3g status` provides a clear, colorized overview of the current branch, staged changes, unstaged modifications, and untracked files.
 - **Merge Command:** `3g merge <branch>` supports both fast-forward and recursive merging with conflict detection.
 - **Blame Command:** `3g blame <file>` shows the last commit hash and author name for each line in a file.
+- **Tag Command:** `3g tag [name]` lists all tags or creates a new lightweight tag at HEAD.
+
 
 
 
@@ -60,5 +62,5 @@
 ## Future Roadmap (Missing Functionality)
 To achieve better parity with standard Git workflows, the following features are planned:
 - **`3g remote`**: Management of remote repository configurations.
-- **`3g tag`**: Support for lightweight version tagging.
-- **Daemon Status**: Visual feedback on background fetch progress in the CLI.
+- **Daemon Status:** Visual feedback on background fetch progress in the CLI.
+

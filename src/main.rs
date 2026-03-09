@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show, status, merge, blame};
+use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show, status, merge, blame, tag};
 use three_g::ipc::get_socket_path;
 use std::os::unix::net::UnixStream;
 use std::process::Command;
@@ -86,6 +86,11 @@ enum Commands {
         /// The name of the branch to merge
         branch: String,
     },
+    /// List tags or create a new tag at HEAD
+    Tag {
+        /// The name of the tag to create (leave empty to list tags)
+        name: Option<String>,
+    },
     /// Manage the background fetch daemon
     Daemon {
         /// Action: start | stop | status
@@ -141,6 +146,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Merge { branch } => {
             merge::merge_branch(&branch)?;
+        }
+        Commands::Tag { name } => {
+            tag::handle_tag(name.as_deref())?;
         }
         Commands::Daemon { action } => {
             handle_daemon_command(&action)?;
