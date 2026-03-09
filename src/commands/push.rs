@@ -26,10 +26,8 @@ pub fn push_current_branch(force: bool) -> Result<(), Box<dyn std::error::Error>
     // 5. Setup push options and callbacks
     let mut callbacks = RemoteCallbacks::new();
     
-    // Auth: Try SSH agent
-    callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        git2::Cred::ssh_key_from_agent(username_from_url.unwrap_or("git"))
-    });
+    // Auth: Try shared credentials callback
+    callbacks.credentials(crate::auth::credentials_callback);
 
     if force {
         println!("Force pushing current branch: '{}' (with lease)...", branch_name);

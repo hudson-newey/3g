@@ -23,10 +23,8 @@ pub fn pull_rebase(target_branch: Option<&str>) -> Result<(), Box<dyn std::error
     let mut remote = repo.find_remote("origin")?;
     let mut callbacks = RemoteCallbacks::new();
     
-    // Auth: Try SSH agent
-    callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        git2::Cred::ssh_key_from_agent(username_from_url.unwrap_or("git"))
-    });
+    // Auth: Try shared credentials callback
+    callbacks.credentials(crate::auth::credentials_callback);
 
     let mut fetch_opts = FetchOptions::new();
     fetch_opts.remote_callbacks(callbacks);

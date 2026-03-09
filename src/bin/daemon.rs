@@ -2,7 +2,7 @@ use std::io::{Read, BufRead, BufReader};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::thread;
-use std::process::{Command, self};
+use std::process::Command;
 use std::sync::mpsc;
 use three_g::ipc::{get_socket_path, get_buffer_path, DaemonRequest};
 
@@ -32,7 +32,7 @@ fn main() -> std::io::Result<()> {
     let (tx, rx) = mpsc::channel();
 
     // Daemon loop
-    let listener_thread = thread::spawn(move || {
+    let _listener_thread = thread::spawn(move || {
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {

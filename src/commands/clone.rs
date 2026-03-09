@@ -32,6 +32,7 @@ pub fn clone_repo(url: &str, name: Option<String>) -> Result<(), Box<dyn std::er
     
     // Prepare callbacks for progress
     let mut cb = RemoteCallbacks::new();
+    cb.credentials(crate::auth::credentials_callback);
     cb.transfer_progress(|stats| {
         if stats.received_objects() > 0 {
              print!("\rReceived {}/{} objects ({})   ", 
