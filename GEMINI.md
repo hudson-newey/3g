@@ -6,7 +6,9 @@
 ### Key Features
 - **Background Fetching:** Uses a background daemon (`3g-daemon`) to perform long-running operations like `git fetch --unshallow` in the background. This allows users to start working on a shallow clone immediately while the full history downloads silently.
 - **Multiple Branch Checkout:** Simplified workflow for managing multiple branches (similar to `git worktree` but with improved DX).
-- **Opinionated Defaults:** Shorter, more sensible defaults for common commands (e.g., `3g add` stages all changes, `3g push` defaults to the current upstream).
+- **Opinionated Defaults:** Shorter, more sensible defaults for common commands (e.g., `3g add` stages all changes by default, `3g push` defaults to the current upstream).
+- **Add Command:** `3g add [files]` allows for staging specific files, or defaults to staging all changes if no paths are provided.
+
 - **Amend Command:** `3g amend` and `3g commit --amend` allow for quick modifications to the last commit, with the editor pre-filled with the existing commit message.
 - **Status Command:** `3g status` provides a clear, colorized overview of the current branch, staged changes, unstaged modifications, and untracked files.
 
@@ -53,7 +55,6 @@
 
 ## Future Roadmap (Missing Functionality)
 To achieve better parity with standard Git workflows, the following features are planned:
-- **`3g add [files]`**: Support for staging specific files (currently defaults to all).
 - **`3g merge <branch>`**: Basic branch merging with conflict detection.
 - **`3g remote`**: Management of remote repository configurations.
 - **`3g tag`**: Support for lightweight version tagging.

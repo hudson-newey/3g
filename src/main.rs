@@ -31,8 +31,11 @@ enum Commands {
         /// The base branch to create the new branch from
         base: Option<String>,
     },
-    /// Add all changes in the current branch to the staging area
-    Add,
+    /// Add specific files or all changes to the staging area
+    Add {
+        /// The files to stage (defaults to all if none provided)
+        files: Vec<String>,
+    },
     /// Commit staged changes with a message from the default editor
     Commit {
         /// Amend the last commit
@@ -90,8 +93,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Branch { name, base } => {
             branch::add_branch(&name, base.as_deref())?;
         }
-        Commands::Add => {
-            add::add_all()?;
+        Commands::Add { files } => {
+            add::add_files(Some(files))?;
         }
         Commands::Commit { amend } => {
             commit::commit_changes(amend)?;

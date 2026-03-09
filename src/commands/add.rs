@@ -1,7 +1,7 @@
 use std::env;
 use git2::Repository;
 
-pub fn add_all() -> Result<(), Box<dyn std::error::Error>> {
+pub fn add_files(paths: Option<Vec<String>>) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
     
     // 1. Check if we are in a worktree (branch) and NOT the root
@@ -19,12 +19,25 @@ pub fn add_all() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut index = repo.index()?;
 
-    // 4. Add all files (equivalent to git add .)
-    // We use an empty pathspec to match everything
-    index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+    // 4. Add files
+    if let Some(p) = paths {
+        if p.is_empty() {
+            // Default to all if list is empty
+            index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+            println!("All changes added to the staging area.");
+        } else {
+            for path in p {
+                index.add_path(std::path::Path::new(&path))?;
+            }
+            println!("Specified files added to the staging area.");
+        }
+    } else {
+        // Default to all if None
+        index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+        println!("All changes added to the staging area.");
+    }
+    
     index.write()?;
-
-    println!("All changes added to the staging area.");
     
     Ok(())
 }
