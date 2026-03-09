@@ -10,3 +10,4 @@ pub mod pull;
 pub mod diff;
 pub mod show;
 pub mod status;
+pub mod merge;
