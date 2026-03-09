@@ -13,14 +13,14 @@ pub fn commit_changes(amend: bool) -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Open the repository
     let repo = Repository::discover(&current_dir)?;
-    
+
     // Check if shallow
     if repo.is_shallow() {
         return Err("Repository history is incomplete (shallow clone). \
         The 3g-daemon is likely still fetching the full history. \
         Please wait for the background fetch to complete before committing.".into());
     }
-    
+
     // 3. Get the index (the staging area)
     let mut index = repo.index()?;
     let tree_id = index.write_tree()?;
@@ -52,17 +52,15 @@ pub fn commit_changes(amend: bool) -> Result<(), Box<dyn std::error::Error>> {
         .ok()
         .or_else(|| env::var("EDITOR").ok())
         .unwrap_or_else(|| "vi".to_string());
-    
-    println!("Using editor: {}", editor);
-    
+
     // Create a unique temporary file for the commit message using a timestamp
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    
+
     let temp_file = env::temp_dir().join(format!("3G_COMMIT_EDITMSG_{}", timestamp));
-    
+
     fs::write(&temp_file, &existing_message)?;
 
     // Use a shell to execute the editor command to handle complex strings
@@ -85,7 +83,7 @@ pub fn commit_changes(amend: bool) -> Result<(), Box<dyn std::error::Error>> {
 
     // 7. Create the commit
     let signature = repo.signature()?;
-    
+
     // Convert Vec<Commit> to Vec of references for the commit function
     let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
 
