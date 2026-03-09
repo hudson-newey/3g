@@ -8,6 +8,8 @@
 - **Multiple Branch Checkout:** Simplified workflow for managing multiple branches (similar to `git worktree` but with improved DX).
 - **Opinionated Defaults:** Shorter, more sensible defaults for common commands (e.g., `3g add` stages all changes, `3g push` defaults to the current upstream).
 - **Amend Command:** `3g amend` and `3g commit --amend` allow for quick modifications to the last commit, with the editor pre-filled with the existing commit message.
+- **Status Command:** `3g status` provides a clear, colorized overview of the current branch, staged changes, unstaged modifications, and untracked files.
+
 
 ## Architecture & Technology Stack
 - **Language:** Rust (2024 edition).
@@ -48,3 +50,12 @@
 ## Daemon & IPC Details
 - **Socket Location:** Typically found in the system's runtime directory (e.g., `/run/user/UID/3g-daemon/3g.sock` on Linux).
 - **Fetch Buffer:** If the daemon is not running when a clone occurs, the request is written to a buffer file (`daemon-fetch-buffer.txt`) and processed automatically when the daemon next starts.
+
+## Future Roadmap (Missing Functionality)
+To achieve better parity with standard Git workflows, the following features are planned:
+- **`3g add [files]`**: Support for staging specific files (currently defaults to all).
+- **`3g merge <branch>`**: Basic branch merging with conflict detection.
+- **`3g remote`**: Management of remote repository configurations.
+- **`3g tag`**: Support for lightweight version tagging.
+- **`3g blame`**: Line-level authorship attribution.
+- **Daemon Status**: Visual feedback on background fetch progress in the CLI.

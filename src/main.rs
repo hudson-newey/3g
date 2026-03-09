@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show};
+use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show, status};
 use three_g::ipc::get_socket_path;
 use std::os::unix::net::UnixStream;
 use std::process::Command;
@@ -71,6 +71,8 @@ enum Commands {
         /// The commit hash to show
         hash: String,
     },
+    /// Show the current working tree status
+    Status,
     /// Manage the background fetch daemon
     Daemon {
         /// Action: start | stop | status
@@ -117,6 +119,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Show { hash } => {
             show::show_commit(&hash)?;
+        }
+        Commands::Status => {
+            status::show_status()?;
         }
         Commands::Daemon { action } => {
             handle_daemon_command(&action)?;
