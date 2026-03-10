@@ -1,9 +1,7 @@
 use std::env;
 use git2::Repository;
 
-use crate::commands::{add, commit};
-
-pub fn revert_hash(reflog_hash: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn cherry_pick(reflog_hash: &str) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
 
     // 1. Check if we are in a worktree (branch) and NOT the root
@@ -23,14 +21,9 @@ pub fn revert_hash(reflog_hash: &str) -> Result<(), Box<dyn std::error::Error>> 
     let obj = repo.revparse_single(reflog_hash)?;
     let commit = obj.peel_to_commit()?;
 
-    // 5. Revert the changes (these are not staged yet)
-    repo.revert(&commit, None)?;
+    repo.cherrypick(&commit, None)?;
 
-    println!("Reverted reflog hash: {}", reflog_hash);
-
-    // 6. Add all files and create a merge commit
-    add::add_files(None)?;
-    commit::commit_changes(false)?;
+    println!("(Unstaged) Cherry picked reflog hash: {}", reflog_hash);
 
     Ok(())
 }

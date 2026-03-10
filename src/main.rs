@@ -2,8 +2,7 @@ use clap::{Parser, Subcommand};
 use std::os::unix::net::UnixStream;
 use std::process::Command;
 use three_g::commands::{
-    add, blame, branch, clone, commit, diff, log, merge, pull, push, reset, revert, show, stash,
-    status, tag,
+    add, blame, branch, cherry_pick, clone, commit, diff, log, merge, pull, push, reset, revert, show, stash, status, tag
 };
 use three_g::ipc::get_socket_path;
 
@@ -47,6 +46,9 @@ enum Commands {
     },
     /// Amend the last commit (shortcut for 'commit --amend')
     Amend,
+    CherryPick {
+        reflog_hash: String,
+    },
     /// Stash changes or pop the latest stash
     Stash {
         /// "pop" to apply and remove the latest stash, or a name for a new stash
@@ -123,6 +125,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Amend => {
             commit::commit_changes(true)?;
+        }
+        Commands::CherryPick { reflog_hash } => {
+            cherry_pick::cherry_pick(&reflog_hash)?;
         }
         Commands::Stash { arg } => {
             stash::handle_stash(arg.as_deref())?;
