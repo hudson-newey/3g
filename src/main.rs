@@ -1,8 +1,11 @@
 use clap::{Parser, Subcommand};
-use three_g::commands::{clone, branch, add, commit, stash, log, reset, push, pull, diff, show, status, merge, blame, tag};
-use three_g::ipc::get_socket_path;
 use std::os::unix::net::UnixStream;
 use std::process::Command;
+use three_g::commands::{
+    add, blame, branch, clone, commit, diff, log, merge, pull, push, reset, revert, show, stash,
+    status, tag,
+};
+use three_g::ipc::get_socket_path;
 
 #[derive(Parser)]
 #[command(name = "3g")]
@@ -18,7 +21,7 @@ enum Commands {
     Clone {
         /// The repository URL to clone from
         url: String,
-        
+
         /// Optional directory name to clone into
         #[arg(short, long)]
         name: Option<String>,
@@ -53,6 +56,10 @@ enum Commands {
     Log,
     /// Reset the current branch to HEAD, discarding all changes (hard reset)
     Reset,
+    Revert {
+        /// The commit hash to revert
+        reflog_hash: String,
+    },
     /// Push the current branch to the origin remote
     Push {
         /// Force push (behavior: force-with-lease)
@@ -126,6 +133,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Reset => {
             reset::reset_hard()?;
         }
+        Commands::Revert { reflog_hash } => {
+            revert::revert_hash(&reflog_hash)?;
+        }
         Commands::Push { force } => {
             push::push_current_branch(force)?;
         }
@@ -176,17 +186,20 @@ fn handle_daemon_command(action: &str) -> Result<(), Box<dyn std::error::Error>>
         }
         "status" => {
             if socket_path.exists() {
-                 if UnixStream::connect(&socket_path).is_ok() {
+                if UnixStream::connect(&socket_path).is_ok() {
                     println!("Daemon is running.");
-                 } else {
+                } else {
                     println!("Daemon is NOT running (stale socket found).");
-                 }
+                }
             } else {
                 println!("Daemon is NOT running.");
             }
         }
         _ => {
-            println!("Unknown action: {}. Use start, stop, restart, or status.", action);
+            println!(
+                "Unknown action: {}. Use start, stop, restart, or status.",
+                action
+            );
         }
     }
     Ok(())
@@ -206,10 +219,9 @@ fn start_daemon(socket_path: &std::path::Path) -> Result<(), Box<dyn std::error:
     println!("Starting 3g-daemon...");
     let exe_path = std::env::current_exe()?;
     let daemon_path = exe_path.parent().unwrap().join("3g-daemon");
-    
-    Command::new(daemon_path)
-        .spawn()?;
-        
+
+    Command::new(daemon_path).spawn()?;
+
     println!("Daemon started in background.");
     Ok(())
 }
