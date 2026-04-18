@@ -60,7 +60,10 @@ enum Commands {
     /// Show the commit history for the current branch
     Log,
     /// Reset the current branch to HEAD, discarding all changes (hard reset)
-    Reset,
+    Reset {
+        /// Files to reset to the current HEAD
+        files: Vec<String>,
+    },
     Revert {
         /// The commit hash to revert
         reflog_hash: String,
@@ -138,8 +141,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Log => {
             log::show_log()?;
         }
-        Commands::Reset => {
-            reset::reset_hard()?;
+        Commands::Reset { files } => {
+            reset::reset_hard(Some(files))?;
         }
         Commands::Revert { reflog_hash } => {
             revert::revert_hash(&reflog_hash)?;

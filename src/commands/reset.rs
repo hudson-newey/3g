@@ -1,7 +1,9 @@
 use std::env;
 use git2::{Repository, ResetType};
 
-pub fn reset_hard() -> Result<(), Box<dyn std::error::Error>> {
+use crate::commands::add::add_files;
+
+pub fn reset_hard(paths: Option<Vec<String>>) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
 
     // 1. Check if we are in the repository root
@@ -11,13 +13,21 @@ pub fn reset_hard() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Open the repository
     let repo = Repository::discover(&current_dir)?;
-    
+
     // 3. Find HEAD
     let head = repo.head()?;
     let target = head.peel_to_commit()?;
-    
-    // 4. Perform hard reset
-    // This updates the index and working directory to match the target commit
+
+    // If there are files specified in the command line arguments, we only want
+    // to reset those files.
+    // However, if there are no files in the arguments, we want to automatically
+    // reset all files (including uncommitted files).
+    if paths.is_none() {
+        add_files(None)?;
+    } else if let Some(p) = paths && p.is_empty() {
+        add_files(None)?;
+    }
+
     repo.reset(target.as_object(), ResetType::Hard, None)?;
 
     println!("HEAD is now at {} (Hard reset successful)", target.id());
