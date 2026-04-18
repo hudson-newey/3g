@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use std::os::unix::net::UnixStream;
 use std::process::Command;
 use three_g::commands::{
-    add, blame, branch, cherry_pick, clone, commit, diff, log, merge, pull, push, reset, revert, show, stash, status, tag
+    add, blame, branch, apply, clone, commit, diff, log, merge, pull, push, reset, revert, show, stash, status, tag
 };
 use three_g::ipc::get_socket_path;
 
@@ -46,7 +46,10 @@ enum Commands {
     },
     /// Amend the last commit (shortcut for 'commit --amend')
     Amend,
-    CherryPick {
+    // I have chosen to combine the "apply" and "cherry-pick" commands because I
+    // don't see much use in having two different commands for applying remote
+    // commits and patch files.
+    Apply {
         reflog_hash: String,
     },
     /// Stash changes or pop the latest stash
@@ -126,8 +129,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Amend => {
             commit::commit_changes(true)?;
         }
-        Commands::CherryPick { reflog_hash } => {
-            cherry_pick::cherry_pick(&reflog_hash)?;
+        Commands::Apply { reflog_hash } => {
+            apply::cherry_pick(&reflog_hash)?;
         }
         Commands::Stash { arg } => {
             stash::handle_stash(arg.as_deref())?;

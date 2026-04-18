@@ -3,7 +3,7 @@ pub mod branch;
 pub mod blame;
 pub mod add;
 pub mod commit;
-pub mod cherry_pick;
+pub mod apply;
 pub mod stash;
 pub mod log;
 pub mod reset;
