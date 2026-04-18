@@ -2,17 +2,18 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - "main"
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
