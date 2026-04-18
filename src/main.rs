@@ -63,6 +63,9 @@ enum Commands {
     Reset {
         /// Files to reset to the current HEAD
         files: Vec<String>,
+
+        #[arg(short, long)]
+        soft: bool,
     },
     Revert {
         /// The commit hash to revert
@@ -141,8 +144,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Log => {
             log::show_log()?;
         }
-        Commands::Reset { files } => {
-            reset::reset_hard(Some(files))?;
+        Commands::Reset { files, soft } => {
+            reset::reset_hard(Some(files), soft)?;
         }
         Commands::Revert { reflog_hash } => {
             revert::revert_hash(&reflog_hash)?;

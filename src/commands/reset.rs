@@ -1,9 +1,12 @@
-use std::env;
 use git2::{Repository, ResetType};
+use std::env;
 
 use crate::commands::add::add_files;
 
-pub fn reset_hard(paths: Option<Vec<String>>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn reset_hard(
+    paths: Option<Vec<String>>,
+    soft: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
 
     // 1. Check if we are in the repository root
@@ -28,7 +31,13 @@ pub fn reset_hard(paths: Option<Vec<String>>) -> Result<(), Box<dyn std::error::
         add_files(None)?;
     }
 
-    repo.reset(target.as_object(), ResetType::Hard, None)?;
+    let reset_type = if soft {
+        ResetType::Soft
+    } else {
+        ResetType::Hard
+    };
+
+    repo.reset(target.as_object(), reset_type, None)?;
 
     println!("HEAD is now at {} (Hard reset successful)", target.id());
 
